@@ -1,28 +1,38 @@
 'use client';
-
 import { useState, useRef, useEffect } from 'react';
 
+const MODEL_NAME = 'gpt-5'; // just a label for the footer
+
+// --- API helpers ---
 async function sendChat(messages) {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages }),
   });
-  if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    throw new Error(err || `HTTP ${res.status}`);
-  }
-  const data = await res.json();             // { ok, message: { role, content } }
-  return data.message;
+  const data = await res.json();
+  if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+  return data.message; // { role, content }
 }
 
+async function generateImage(prompt, size = '1024x1024') {
+  const res = await fetch('/api/image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, size }),
+  });
+  const data = await res.json();
+  if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+  return `data:image/png;base64,${data.b64}`;
+}
+
+// --- Main UI ---
 export default function ChatPage() {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Hey! I’m ready when you are. Ask me anything." }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const inputRef = useRef(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -35,20 +45,33 @@ export default function ChatPage() {
     setInput('');
     setLoading(true);
 
-    const userMsg = { role: 'user', content: text };
-    setMessages(prev => [...prev, userMsg]);
+    // Detect if it's an image command: "/img Snoopy skateboarding"
+    const IMG_RE = /^\/(img|image)\s+/i;
 
+    if (IMG_RE.test(text)) {
+      const prompt = text.replace(IMG_RE, '').trim();
+      setMessages((m) => [...m, { role: 'user', content: text }]);
+      try {
+        const src = await generateImage(prompt);
+        setMessages((m) => [...m, { role: 'assistant', image: src, alt: prompt }]);
+      } catch (e) {
+        setMessages((m) => [...m, { role: 'assistant', content: `Image error: ${e.message}` }]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Normal chat
+    const userMsg = { role: 'user', content: text };
+    setMessages((m) => [...m, userMsg]);
     try {
-      const reply = await sendChat([...messages, userMsg]); // send full context
-      setMessages(prev => [...prev, { role: 'assistant', content: reply.content }]);
+      const reply = await sendChat([...messages, userMsg]);
+      setMessages((m) => [...m, { role: 'assistant', content: reply.content }]);
     } catch (e) {
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: `Server error: ${e.message}` }
-      ]);
+      setMessages((m) => [...m, { role: 'assistant', content: `Server error: ${e.message}` }]);
     } finally {
       setLoading(false);
-      inputRef.current?.focus();
     }
   }
 
@@ -66,7 +89,7 @@ export default function ChatPage() {
       <div style={styles.card}>
         <div style={styles.titleRow}>
           <div style={styles.title}>Chat</div>
-          <div style={styles.hint}><kbd>⌘/Ctrl</kbd> + <kbd>Enter</kbd> to send</div>
+          <div style={styles.hint}><kbd>Enter</kbd> to send</div>
         </div>
 
         <div ref={scrollRef} style={styles.messages}>
@@ -75,7 +98,9 @@ export default function ChatPage() {
               <strong style={{ opacity: .8 }}>
                 {m.role === 'user' ? 'You' : 'Assistant'}:
               </strong>{' '}
-              <span>{m.content}</span>
+              {m.image
+                ? <img src={m.image} alt={m.alt || 'generated'} style={styles.image} />
+                : <span>{m.content}</span>}
             </div>
           ))}
           {loading && (
@@ -87,11 +112,10 @@ export default function ChatPage() {
 
         <div style={styles.inputRow}>
           <textarea
-            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Type your message…"
+            placeholder="Type a message or /img your prompt..."
             style={styles.textarea}
             rows={1}
           />
@@ -100,14 +124,13 @@ export default function ChatPage() {
           </button>
         </div>
 
-        const MODEL_NAME = "gpt-5"; // just a label for the UI
-...
-<div style={styles.footerNote}>Model: {MODEL_NAME}</div>
+        <div style={styles.footerNote}>Model: {MODEL_NAME}</div>
       </div>
     </div>
   );
 }
 
+// --- Styles ---
 const styles = {
   page: {
     minHeight: '100vh',
@@ -155,6 +178,7 @@ const styles = {
   },
   user: { color: '#e8eef6' },
   assistant: { color: '#b7cdf7' },
+  image: { maxWidth: '100%', borderRadius: 8, border: '1px solid #1b2535', marginTop: 6 },
   inputRow: {
     display: 'flex',
     gap: 8,
@@ -177,8 +201,7 @@ const styles = {
     background: '#1a7f64',
     color: '#e8eef6',
     fontWeight: 700,
-    cursor: 'pointer',
-    opacity: 1
+    cursor: 'pointer'
   },
   footerNote: {
     marginTop: 6,
