@@ -1,12 +1,11 @@
-// app/layout.jsx
 import "./globals.css";
 
 export const metadata = {
-  title: process.env.APP_NAME || "VenegasAI",
+  title: "VenegasAI",
   description: "Fast, simple AI chat.",
   icons: {
-    icon: "/favicon.ico",            // requires public/favicon.ico
-    apple: "/apple-touch-icon.png",  // optional (public/apple-touch-icon.png)
+    icon: "/favicon.ico",              // comes from public/favicon.ico
+    apple: "/apple-touch-icon.png",    // comes from public/apple-touch-icon.png
   },
 };
 
