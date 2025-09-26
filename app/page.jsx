@@ -1,79 +1,186 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
+'use client';
 
-export default function Page() {
+import { useState, useRef, useEffect } from 'react';
+
+async function sendChat(messages) {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
+  });
+  if (!res.ok) {
+    const err = await res.text().catch(() => '');
+    throw new Error(err || `HTTP ${res.status}`);
+  }
+  const data = await res.json();             // { ok, message: { role, content } }
+  return data.message;
+}
+
+export default function ChatPage() {
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hey! I’m ready when you are. Ask me anything." }
+    { role: 'assistant', content: "Hey! I’m ready when you are. Ask me anything." }
   ]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const listRef = useRef(null);
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || process.env.APP_NAME || "VenegasAI";
-  const model = process.env.NEXT_PUBLIC_OPENAI_MODEL || "gpt-4o-mini";
+  const inputRef = useRef(null);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages]);
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, loading]);
 
-  async function send() {
+  async function handleSend() {
     const text = input.trim();
     if (!text || loading) return;
-    setInput("");
-    const next = [...messages, { role: "user", content: text }];
-    setMessages(next);
+    setInput('');
     setLoading(true);
+
+    const userMsg = { role: 'user', content: text };
+    setMessages(prev => [...prev, userMsg]);
+
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next })
-      });
-      if (!res.ok) throw new Error("Bad response");
-      const data = await res.json();
-      setMessages([...next, { role: "assistant", content: data.reply }]);
+      const reply = await sendChat([...messages, userMsg]); // send full context
+      setMessages(prev => [...prev, { role: 'assistant', content: reply.content }]);
     } catch (e) {
-      setMessages([...next, { role: "assistant", content: "⚠️ Couldn’t reach the server. Check your API key in .env.local." }]);
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: `Server error: ${e.message}` }
+      ]);
     } finally {
       setLoading(false);
+      inputRef.current?.focus();
     }
   }
 
   function onKeyDown(e) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send();
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   }
 
   return (
-    <div className="container">
-      <div className="header">
-        <div className="brand">{appName}</div>
-        <div className="footnote">
-          <span className="kbd">⌘/Ctrl</span> + <span className="kbd">Enter</span> to send
+    <div style={styles.page}>
+      <div style={styles.header}>VenegasAI</div>
+
+      <div style={styles.card}>
+        <div style={styles.titleRow}>
+          <div style={styles.title}>Chat</div>
+          <div style={styles.hint}><kbd>⌘/Ctrl</kbd> + <kbd>Enter</kbd> to send</div>
         </div>
-      </div>
 
-      <div className="card">
-        <h1>Chat</h1>
-        <div className="subtitle">Fast, minimal, private. No data is stored.</div>
-
-        <div ref={listRef} className="messages">
+        <div ref={scrollRef} style={styles.messages}>
           {messages.map((m, i) => (
-            <div key={i} className={`msg ${m.role}`}>
-              <strong>{m.role === "user" ? "You" : "Assistant"}:</strong> {m.content}
+            <div key={i} style={{ ...styles.msg, ...(m.role === 'user' ? styles.user : styles.assistant) }}>
+              <strong style={{ opacity: .8 }}>
+                {m.role === 'user' ? 'You' : 'Assistant'}:
+              </strong>{' '}
+              <span>{m.content}</span>
             </div>
           ))}
+          {loading && (
+            <div style={{ ...styles.msg, ...styles.assistant }}>
+              <strong>Assistant:</strong> <span>…thinking</span>
+            </div>
+          )}
         </div>
 
-        <div className="row">
+        <div style={styles.inputRow}>
           <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Type your message..."
+            placeholder="Type your message…"
+            style={styles.textarea}
+            rows={1}
           />
-          <button onClick={send} disabled={loading}>{loading ? "Sending…" : "Send"}</button>
+          <button onClick={handleSend} disabled={loading || !input.trim()} style={styles.button}>
+            Send
+          </button>
         </div>
-        <div className="footnote">Model: {model}</div>
+
+        <div style={styles.footerNote}>Model: gpt-4o-mini</div>
       </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: '#0b0f14',
+    color: '#e8eef6',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '24px'
+  },
+  header: {
+    fontWeight: 800,
+    letterSpacing: .4,
+    marginBottom: 12
+  },
+  card: {
+    width: '100%',
+    maxWidth: 720,
+    background: '#0f1621',
+    border: '1px solid #1f2a3a',
+    borderRadius: 12,
+    padding: 16,
+    boxShadow: '0 8px 20px rgba(0,0,0,.35)'
+  },
+  titleRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 8
+  },
+  title: { fontSize: 28, fontWeight: 700 },
+  hint: { opacity: .6, fontSize: 12 },
+  messages: {
+    height: '55vh',
+    overflowY: 'auto',
+    padding: '8px 6px',
+    background: '#0b111b',
+    borderRadius: 8,
+    border: '1px solid #1b2535',
+    marginBottom: 12
+  },
+  msg: {
+    margin: '10px 0',
+    lineHeight: 1.4
+  },
+  user: { color: '#e8eef6' },
+  assistant: { color: '#b7cdf7' },
+  inputRow: {
+    display: 'flex',
+    gap: 8,
+    alignItems: 'flex-end'
+  },
+  textarea: {
+    flex: 1,
+    resize: 'none',
+    background: '#0b111b',
+    color: '#e8eef6',
+    border: '1px solid #1b2535',
+    borderRadius: 8,
+    padding: '10px 12px',
+    outline: 'none'
+  },
+  button: {
+    padding: '10px 16px',
+    borderRadius: 8,
+    border: '1px solid #1b2535',
+    background: '#1a7f64',
+    color: '#e8eef6',
+    fontWeight: 700,
+    cursor: 'pointer',
+    opacity: 1
+  },
+  footerNote: {
+    marginTop: 6,
+    fontSize: 12,
+    opacity: .6
+  }
+};
