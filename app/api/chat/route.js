@@ -36,3 +36,24 @@ export async function POST(req: Request) {
     );
   }
 }
+// app/api/image/route.ts
+export const runtime = "edge";
+import OpenAI from "openai";
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export async function POST(req: Request) {
+  try {
+    const { prompt } = await req.json();
+    const gen = await client.images.generate({
+      model: "gpt-image-1",
+      prompt,
+      size: "1024x1024",
+    });
+    // Return base64 for the client to render
+    const b64 = gen.data[0].b64_json;
+    return Response.json({ b64 });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  }
+}
+
