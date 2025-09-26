@@ -170,18 +170,11 @@ export default function ChatPage() {
           </button>
         </div>
 
-        <div style={{
-  flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: "#003322", // slightly lighter green for contrast
-  borderRadius: "8px",
-  padding: "1rem",
-  maxWidth: "800px",
-  margin: "0 auto"
-}}>
-  {/* Chat UI here */}
-</div>
+        <div style={styles.footerNote}>Model: {MODEL_NAME}</div>
+      </div>
+    </div>
+  );
+}
 
 // ---------- Styles ----------
 const styles = {
