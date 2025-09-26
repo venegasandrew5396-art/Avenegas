@@ -1,5 +1,9 @@
 import OpenAI from "openai";
 
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,  // ✅ this line replaces your old key
+});
+
 export const runtime = "nodejs";     // stable SDK support
 export const dynamic = "force-dynamic";
 
