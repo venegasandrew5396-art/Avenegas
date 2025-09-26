@@ -1,13 +1,50 @@
-/* globals.css */
+/* === Original base theme (restored) === */
+:root {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --border: #334155;
+  --muted: #94a3b8;
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
+}
+
+* { box-sizing: border-box; padding: 0; margin: 0; }
 
 html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #002d1c; /* your dark green */
-  color: white; /* default text color */
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  height: 100%;              /* full-bleed helper */
 }
 
-* {
-  box-sizing: border-box;
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; }
+textarea { font-family: inherit; font-size: inherit; line-height: inherit; }
+
+/* === VenegasAI green/gold overrides (opt-in) ===
+   Add class="theme-venegas" on <body> to enable.
+*/
+body.theme-venegas {
+  --background: #07140f;     /* site bg (dark green) */
+  --foreground: #ffffff;     /* main text */
+  --card: #0e1f17;           /* card bg */
+  --border: #143426;         /* borders */
+  --muted: #b8d1c1;          /* assistant/subtext */
+  --accent: #d4b866;         /* gold */
+  --accent-foreground: #092015;
+
+  /* make sure background fills the whole screen (no white edges) */
+  min-height: 100svh;
+  background: var(--background);
 }
+
+/* Handy utility classes using the variables (optional) */
+.card       { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.btn        { background: var(--accent); color: var(--accent-foreground); border: 1px solid #b79b4f; border-radius: 10px; }
+.input      { background: #143426; color: var(--foreground); border: 1px solid #1f3d2d; border-radius: 10px; }
+.msg-user   { color: var(--foreground); }
+.msg-assist { color: var(--muted); }
