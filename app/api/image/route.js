@@ -50,3 +50,6 @@ export async function POST(req) {
 export async function GET() {
   return new Response("POST JSON: { prompt: string, size?: '256x256'|'512x512'|'1024x1024' }", { status: 405 });
 }
+export async function GET() {
+  return new Response('ok', { status: 200 });
+}
