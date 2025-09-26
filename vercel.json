@@ -1,19 +1,13 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "next.config.js",
-      "use": "@vercel/next"
-    }
-  ],
   "functions": {
-    "api/**/*.js": {
+    "app/api/image/route.js": {
       "runtime": "edge",
       "maxDuration": 10
+    },
+    "app/api/chat/route.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 10,
+      "memory": 256
     }
-  },
-  "env": {
-    "OPENAI_API_KEY": "@openai_api_key",
-    "OPENAI_ORG_ID": "@openai_org_id"
   }
 }
