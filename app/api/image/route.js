@@ -1,28 +1,33 @@
 // app/api/image/route.js
-export const runtime = "edge";
+export const runtime = "edge"; // keep your original working base
 
 import OpenAI from "openai";
-
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   organization: process.env.OPENAI_ORG_ID, // ok if undefined
 });
 
-// ✅ Only sizes OpenAI supports now
+// Only sizes OpenAI supports now
 const VALID = new Set(["1024x1024", "1024x1536", "1536x1024", "auto"]);
-const norm = (s) => (VALID.has(s) ? s : "1024x1024");
+function normalizeSize(s) {
+  if (!s) return "1024x1024";
+  s = String(s).toLowerCase().trim();
+  // map legacy/invalid -> supported
+  if (s === "256x256" || s === "512x512") return "1024x1024";
+  return VALID.has(s) ? s : "1024x1024";
+}
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    let { prompt, size = "1024x1024" } = body || {};
+    const body = await req.json().catch(() => ({}));
+    let { prompt, size } = body || {};
 
     if (!prompt || typeof prompt !== "string") {
       return new Response(JSON.stringify({ ok: false, error: "Missing or invalid prompt" }), { status: 400 });
     }
 
-    // ✅ hard-normalize legacy/invalid sizes to avoid the 400 you saw
-    size = norm((size || "").toString());
+    // absolute guard: force valid size no matter what the client sent
+    size = normalizeSize(size);
 
     const result = await client.images.generate({
       model: "gpt-image-1",
@@ -30,7 +35,7 @@ export async function POST(req) {
       size, // always valid now
     });
 
-    const b64 = result.data?.[0]?.b64_json;
+    const b64 = result?.data?.[0]?.b64_json;
     if (!b64) {
       return new Response(JSON.stringify({ ok: false, error: "No image returned" }), { status: 500 });
     }
@@ -40,10 +45,7 @@ export async function POST(req) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ ok: false, error: err?.message || "Image error" }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ ok: false, error: err?.message || "Image error" }), { status: 500 });
   }
 }
 
