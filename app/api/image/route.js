@@ -1,32 +1,30 @@
 // app/api/image/route.js
-export const runtime = "nodejs";        // <-- longer window than Edge
-export const preferredRegion = "iad1";  // close to you (East)
-export const maxDuration = 60;          // Pro plan honors up to 60s
+export const runtime = "edge"; // fastest cold start
 
 import OpenAI from "openai";
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  organization: process.env.OPENAI_ORG_ID,
+  organization: process.env.OPENAI_ORG_ID || undefined,
 });
 
-// Only sizes OpenAI supports now
-const VALID = new Set(["1024x1024", "1024x1536", "1536x1024", "auto"]);
-const norm = (s) => {
+// Accepted sizes per current API
+const VALID = new Set(["auto", "1024x1024", "1024x1536", "1536x1024"]);
+function normSize(s) {
   s = String(s || "").toLowerCase().trim();
-  if (s === "256x256" || s === "512x512") return "1024x1024";
-  return VALID.has(s) ? s : "1024x1024";
-};
-
-// Small guard so we don't spend time on giant prompts
+  if (s === "256x256" || s === "512x512") return "auto";
+  return VALID.has(s) ? s : "auto";
+}
 function trimPrompt(p) {
   if (!p || typeof p !== "string") return "";
   p = p.trim().replace(/\s+/g, " ");
-  if (p.length > 500) p = p.slice(0, 500);
+  // keep it tight for Hobby
+  if (p.length > 300) p = p.slice(0, 300);
   return p;
 }
 
-// Simple timeout wrapper (gives OpenAI ~40s to respond)
-function withTimeout(promise, ms = 40000) {
+// Fast timeout (≈8.5s) to stay within Hobby’s ~10s wall clock
+function withTimeout(promise, ms = 8500) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error("timed out")), ms)),
@@ -36,51 +34,49 @@ function withTimeout(promise, ms = 40000) {
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    let { prompt, size = "1024x1024" } = body || {};
+    let { prompt, size = "auto" } = body || {};
+
     prompt = trimPrompt(prompt);
     if (!prompt) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing or invalid prompt" }), { status: 400 });
+      return new Response(JSON.stringify({ ok: false, error: "Missing prompt" }), { status: 400 });
     }
-    size = norm(size);
+    size = normSize(size);
 
-    // Optional: append your style from env
+    // Optional “house style” appended from env
     const style = (process.env.MY_ART_STYLE || "").trim();
     if (style) prompt = `${prompt}, ${style}`;
 
-    // Try once; if it times out, try again with 'auto' which can be faster
-    const plan = [size, size === "auto" ? "auto" : "auto"];
-    let lastErr;
-    for (let i = 0; i < plan.length; i++) {
-      try {
-        const s = plan[i];
-        const res = await withTimeout(
-          client.images.generate({ model: "gpt-image-1", prompt, size: s }),
-          40000
-        );
-        const b64 = res?.data?.[0]?.b64_json;
-        if (!b64) throw new Error("No image returned");
-        return new Response(JSON.stringify({ ok: true, b64, size: s, retries: i }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      } catch (e) {
-        lastErr = e;
-        if (i === 0) await new Promise(r => setTimeout(r, 700)); // brief backoff
-      }
+    const res = await withTimeout(
+      client.images.generate({
+        model: "gpt-image-1",
+        prompt,
+        size, // "auto" | "1024x1024" | "1024x1536" | "1536x1024"
+      }),
+      8500
+    );
+
+    const b64 = res?.data?.[0]?.b64_json;
+    if (!b64) {
+      return new Response(JSON.stringify({ ok: false, error: "No image returned" }), { status: 502 });
     }
-    throw lastErr || new Error("Image generation failed");
-  } catch (err) {
-    const msg = String(err?.message || "");
-    if (msg.includes("timed out")) {
-      return new Response(JSON.stringify({ ok: false, error: "HTTP 504: Image timed out." }), { status: 504 });
-    }
-    return new Response(JSON.stringify({ ok: false, error: msg || "Image error" }), { status: 500 });
+
+    return new Response(JSON.stringify({ ok: true, b64, size }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    const msg = String(e?.message || "");
+    const status = msg.includes("timed out") ? 504 : 500;
+    return new Response(JSON.stringify({ ok: false, error: status === 504 ? "HTTP 504: timed out" : msg }), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
 export async function GET() {
   return new Response(
-    "POST JSON: { prompt: string, size?: '1024x1024'|'1024x1536'|'1536x1024'|'auto' }",
+    "POST JSON: { prompt: string, size?: 'auto'|'1024x1024'|'1024x1536'|'1536x1024' }",
     { status: 405 }
   );
 }
