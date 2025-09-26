@@ -3,9 +3,9 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    appDir: true, // ensure /app is used as the app router
+    appDir: true
   },
-  output: 'standalone', // useful for Vercel + Docker portability
+  output: 'standalone',
   async headers() {
     return [
       {
@@ -13,11 +13,11 @@ const nextConfig = {
         headers: [
           { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET,POST,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
-        ],
-      },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' }
+        ]
+      }
     ];
-  },
+  }
 };
 
 module.exports = nextConfig;
