@@ -100,7 +100,9 @@ export default function ChatPage() {
           </button>
         </div>
 
-        <div style={styles.footerNote}>Model: gpt-4o-mini</div>
+        const MODEL_NAME = "gpt-5"; // just a label for the UI
+...
+<div style={styles.footerNote}>Model: {MODEL_NAME}</div>
       </div>
     </div>
   );
