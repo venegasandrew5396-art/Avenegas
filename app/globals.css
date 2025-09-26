@@ -1,21 +1,22 @@
-/* Brand tokens */
+/* ===== Brand tokens ===== */
 :root{
-  --vx-bg:        #07140f;   /* deep green */
-  --vx-panel:     #0e1f17;   /* card bg   */
-  --vx-elev:      #0a1712;   /* message bg */
+  --vx-bg:        #07140f;   /* site bg */
+  --vx-panel:     #0e1f17;   /* card bg */
+  --vx-elev:      #10241b;   /* messages bg */
+  --vx-input:     #143426;   /* input bg */
   --vx-border:    #143426;   /* borders   */
-  --vx-text:      #eaf3ec;   /* main text */
-  --vx-subtext:   #b8d1c1;   /* secondary */
-  --vx-gold:      #d4b866;   /* gold      */
-  --vx-gold-2:    #b79b4f;   /* darker    */
-  --vx-accent:    #1f7d5e;   /* green btn */
+  --vx-text:      #ffffff;   /* main text */
+  --vx-subtext:   #b8d1c1;   /* assistant text */
+  --vx-gold:      #d4b866;   /* brand gold */
+  --vx-gold-2:    #b79b4f;   /* darker gold */
+  --vx-text-dark: #092015;   /* dark text on gold */
 }
 
-/* Base reset */
-*{ box-sizing:border-box }
-html,body{ height:100% }
-body{
-  margin:0;
+/* ===== Base ===== */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body.vx-body {
+  margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
   background: var(--vx-bg);
   color: var(--vx-text);
@@ -23,7 +24,7 @@ body{
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Header */
+/* ===== Header ===== */
 .vx-header{
   display:flex; align-items:center; gap:.6rem;
   padding:14px 18px;
@@ -41,14 +42,14 @@ body{
   font-weight:800; letter-spacing:.3px; color:var(--vx-gold);
 }
 
-/* Page shell */
+/* ===== Page shell ===== */
 .vx-shell{
   min-height: calc(100dvh - 120px);
-  padding: 20px;
+  padding: 24px 16px;
   display:flex; justify-content:center;
 }
 
-/* Card look (use on your chat container) */
+/* ===== Card ===== */
 .vx-card{
   width:100%; max-width:760px;
   background: var(--vx-panel);
@@ -57,31 +58,66 @@ body{
   padding:18px;
   box-shadow:0 8px 24px rgba(0,0,0,.35);
 }
-
-/* Utility styles you can use in page.jsx */
-.vx-title{ font-size:30px; font-weight:800; margin:0 0 8px }
-.vx-sub{ color:var(--vx-subtext); font-size:12px }
-.vx-pane{
-  background: var(--vx-elev);
-  border:1px solid var(--vx-border);
-  border-radius:10px;
-  padding:10px 8px;
+.vx-titlebar{
+  display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;
 }
+.vx-title{ font-size:28px; font-weight:800; margin:0 }
+.vx-note{ color:var(--vx-subtext); font-size:12px }
+
+/* ===== Messages ===== */
+.vx-messages{
+  height:55vh; overflow-y:auto;
+  padding:10px 8px;
+  background: var(--vx-elev);
+  border-radius:10px;
+  border:1px solid var(--vx-border);
+  margin-bottom:12px;
+}
+.vx-msg{ margin:10px 0; line-height:1.5; }
+.vx-msg strong{ opacity:.85; }
+.vx-user{ color: var(--vx-text); }
+.vx-assistant{ color: var(--vx-subtext); }
+.vx-img{
+  max-width:100%;
+  border-radius:10px;
+  border:1px solid var(--vx-border);
+  margin-top:6px;
+}
+
+/* ===== Composer ===== */
+.vx-composer{ display:flex; gap:10px; align-items:flex-end; }
 .vx-input{
-  background:#0b1913; color:var(--vx-text);
-  border:1px solid var(--vx-border); border-radius:10px;
-  padding:12px 14px; outline:none;
+  flex:1;
+  resize:none;
+  background: var(--vx-input);
+  color: var(--vx-text);
+  border:1px solid #1f3d2d;
+  border-radius:10px;
+  padding:12px 14px;
+  outline:none;
+  font-size:15px; line-height:1.4;
 }
 .vx-btn{
-  background:var(--vx-gold); color:#092015;
+  padding:12px 18px;
+  border-radius:10px;
   border:1px solid var(--vx-gold-2);
-  padding:12px 18px; border-radius:10px;
-  font-weight:800; cursor:pointer;
-  transition: transform .05s ease, background .15s ease;
+  background: var(--vx-gold);
+  color: var(--vx-text-dark);
+  font-weight:800;
+  cursor:pointer;
+  transition: background .15s ease, transform .05s ease;
 }
-.vx-btn:active{ transform:translateY(1px) }
+.vx-btn:active{ transform: translateY(1px); }
+
+/* ===== Footer ===== */
 .vx-footer{
   border-top:1px solid var(--vx-border);
   color:var(--vx-subtext);
   padding:14px 18px; text-align:center;
 }
+
+/* ===== Welcome bubble with owl ===== */
+.vx-welcome{
+  display:flex; align-items:center; gap:8px;
+}
+.vx-welcome img{ width:22px; height:22px; }
