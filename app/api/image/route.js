@@ -1,7 +1,8 @@
 // app/api/image/route.js
-export const runtime = "edge"; // keep your original working base
+export const runtime = "edge";
 
 import OpenAI from "openai";
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   organization: process.env.OPENAI_ORG_ID, // ok if undefined
@@ -9,25 +10,21 @@ const client = new OpenAI({
 
 // Only sizes OpenAI supports now
 const VALID = new Set(["1024x1024", "1024x1536", "1536x1024", "auto"]);
-function normalizeSize(s) {
-  if (!s) return "1024x1024";
-  s = String(s).toLowerCase().trim();
-  // map legacy/invalid -> supported
+const norm = (s) => {
+  s = String(s || "").toLowerCase().trim();
   if (s === "256x256" || s === "512x512") return "1024x1024";
   return VALID.has(s) ? s : "1024x1024";
-}
+};
 
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    let { prompt, size } = body || {};
-
+    let { prompt, size = "1024x1024" } = body || {};
     if (!prompt || typeof prompt !== "string") {
       return new Response(JSON.stringify({ ok: false, error: "Missing or invalid prompt" }), { status: 400 });
     }
 
-    // absolute guard: force valid size no matter what the client sent
-    size = normalizeSize(size);
+    size = norm(size);
 
     const result = await client.images.generate({
       model: "gpt-image-1",
