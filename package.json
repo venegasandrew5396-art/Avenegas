@@ -1,16 +1,7 @@
 {
-  "name": "venegasai",
-  "version": "1.0.0",
+  "name": "image-service",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "next": "14.2.5",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "openai": "^4.57.0"
-  }
+  "type": "module",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.2", "openai": "^4.57.0" }
 }
