@@ -1,42 +1,26 @@
-export const runtime = "edge"; // makes it run fast on Vercel Edge
-
+export const runtime = "edge";
 import OpenAI from "openai";
 
-// Create client with your API key from environment
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  organization: process.env.OPENAI_ORG_ID, // ← add this line
 });
 
 export async function POST(req) {
   try {
     const { prompt, size = "1024x1024" } = await req.json();
-
     if (!prompt) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Missing prompt" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return Response.json({ ok: false, error: "Missing prompt" }, { status: 400 });
     }
-
     const gen = await client.images.generate({
-      model: "gpt-image-1", // latest image model
+      model: "gpt-image-1",
       prompt,
-      size, // "512x512", "1024x1024", "2048x2048" (if enabled)
+      size,
     });
-
-    // Return the base64 so frontend can render
-    const b64 = gen.data[0].b64_json;
-
+    const b64 = gen.data?.[0]?.b64_json;
+    if (!b64) throw new Error("Image generation returned no data");
     return Response.json({ ok: true, b64 });
   } catch (e) {
-    return new Response(
-      JSON.stringify({ ok: false, error: e.message }),
-      { status: e.status ?? 500, headers: { "Content-Type": "application/json" } }
-    );
+    return Response.json({ ok: false, error: e.message }, { status: e.status ?? 500 });
   }
-}
-
-// Optional: sanity check when you visit /api/image in the browser
-export async function GET() {
-  return new Response("POST { prompt } to this endpoint", { status: 405 });
 }
