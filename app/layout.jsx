@@ -13,17 +13,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="vx-body">
-        <header className="vx-header">
-          <img src="/logo-owl.png" alt="VenegasAI" className="vx-logo" />
-          <span className="vx-brand">VenegasAI</span>
-        </header>
-
-        <main className="vx-shell">{children}</main>
-
-        <footer className="vx-footer">
-          © {new Date().getFullYear()} VenegasAI
-        </footer>
+      <body style={{ margin: 0 }}>
+        <main style={{ minHeight: "100dvh" }}>{children}</main>
       </body>
     </html>
   );
