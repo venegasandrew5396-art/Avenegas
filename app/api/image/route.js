@@ -1,11 +1,12 @@
 // app/api/image/route.js
-export const runtime = "edge";
+export const runtime = "nodejs";        // <-- longer window than Edge
+export const preferredRegion = "iad1";  // close to you (East)
+export const maxDuration = 60;          // Pro plan honors up to 60s
 
 import OpenAI from "openai";
-
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  organization: process.env.OPENAI_ORG_ID, // ok if undefined
+  organization: process.env.OPENAI_ORG_ID,
 });
 
 // Only sizes OpenAI supports now
@@ -16,33 +17,64 @@ const norm = (s) => {
   return VALID.has(s) ? s : "1024x1024";
 };
 
+// Small guard so we don't spend time on giant prompts
+function trimPrompt(p) {
+  if (!p || typeof p !== "string") return "";
+  p = p.trim().replace(/\s+/g, " ");
+  if (p.length > 500) p = p.slice(0, 500);
+  return p;
+}
+
+// Simple timeout wrapper (gives OpenAI ~40s to respond)
+function withTimeout(promise, ms = 40000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timed out")), ms)),
+  ]);
+}
+
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
     let { prompt, size = "1024x1024" } = body || {};
-    if (!prompt || typeof prompt !== "string") {
+    prompt = trimPrompt(prompt);
+    if (!prompt) {
       return new Response(JSON.stringify({ ok: false, error: "Missing or invalid prompt" }), { status: 400 });
     }
-
     size = norm(size);
 
-    const result = await client.images.generate({
-      model: "gpt-image-1",
-      prompt,
-      size, // always valid now
-    });
+    // Optional: append your style from env
+    const style = (process.env.MY_ART_STYLE || "").trim();
+    if (style) prompt = `${prompt}, ${style}`;
 
-    const b64 = result?.data?.[0]?.b64_json;
-    if (!b64) {
-      return new Response(JSON.stringify({ ok: false, error: "No image returned" }), { status: 500 });
+    // Try once; if it times out, try again with 'auto' which can be faster
+    const plan = [size, size === "auto" ? "auto" : "auto"];
+    let lastErr;
+    for (let i = 0; i < plan.length; i++) {
+      try {
+        const s = plan[i];
+        const res = await withTimeout(
+          client.images.generate({ model: "gpt-image-1", prompt, size: s }),
+          40000
+        );
+        const b64 = res?.data?.[0]?.b64_json;
+        if (!b64) throw new Error("No image returned");
+        return new Response(JSON.stringify({ ok: true, b64, size: s, retries: i }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        lastErr = e;
+        if (i === 0) await new Promise(r => setTimeout(r, 700)); // brief backoff
+      }
     }
-
-    return new Response(JSON.stringify({ ok: true, b64, size }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    throw lastErr || new Error("Image generation failed");
   } catch (err) {
-    return new Response(JSON.stringify({ ok: false, error: err?.message || "Image error" }), { status: 500 });
+    const msg = String(err?.message || "");
+    if (msg.includes("timed out")) {
+      return new Response(JSON.stringify({ ok: false, error: "HTTP 504: Image timed out." }), { status: 504 });
+    }
+    return new Response(JSON.stringify({ ok: false, error: msg || "Image error" }), { status: 500 });
   }
 }
 
