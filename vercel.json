@@ -1,9 +1,19 @@
 {
-  "functions": {
-    "app/api/image/route.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 60,
-      "memory": 1024
+  "version": 2,
+  "builds": [
+    {
+      "src": "next.config.js",
+      "use": "@vercel/next"
     }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "edge",
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "OPENAI_API_KEY": "@openai_api_key",
+    "OPENAI_ORG_ID": "@openai_org_id"
   }
 }
