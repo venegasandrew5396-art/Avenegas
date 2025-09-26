@@ -52,7 +52,6 @@ export default function ChatPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, loading]);
 
-  // ---------- handleSend with guardrails ----------
   async function handleSend() {
     const text = input.trim();
     if (!text || loading) return;
@@ -94,7 +93,7 @@ export default function ChatPage() {
       return;
     }
 
-    // ---------- normal chat ----------
+    // normal chat
     const userMsg = { role: 'user', content: text };
     setMessages(m => [...m, userMsg]);
 
@@ -157,4 +156,91 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div style={styles.input
+        <div style={styles.inputRow}>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Type a message… or /img Snoopy skateboarding in Miami"
+            style={styles.textarea}
+            rows={1}
+          />
+          <button onClick={handleSend} disabled={loading || !input.trim()} style={styles.button}>
+            Send
+          </button>
+        </div>
+
+        <div style={styles.footerNote}>Model: {MODEL_NAME}</div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Styles ----------
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: '#0b0f14',
+    color: '#e8eef6',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '24px'
+  },
+  header: {
+    fontWeight: 800,
+    letterSpacing: .4,
+    marginBottom: 12
+  },
+  card: {
+    width: '100%',
+    maxWidth: 720,
+    background: '#0f1621',
+    border: '1px solid #1f2a3a',
+    borderRadius: 12,
+    padding: 16,
+    boxShadow: '0 8px 20px rgba(0,0,0,.35)'
+  },
+  titleRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 8
+  },
+  title: { fontSize: 28, fontWeight: 700 },
+  hint: { opacity: .6, fontSize: 12 },
+  messages: {
+    height: '55vh',
+    overflowY: 'auto',
+    padding: '8px 6px',
+    background: '#0b111b',
+    borderRadius: 8,
+    border: '1px solid #1b2535',
+    marginBottom: 12
+  },
+  msg: { margin: '10px 0', lineHeight: 1.4 },
+  user: { color: '#e8eef6' },
+  assistant: { color: '#b7cdf7' },
+  image: { maxWidth: '100%', borderRadius: 8, border: '1px solid #1b2535', marginTop: 6 },
+  inputRow: { display: 'flex', gap: 8, alignItems: 'flex-end' },
+  textarea: {
+    flex: 1,
+    resize: 'none',
+    background: '#0b111b',
+    color: '#e8eef6',
+    border: '1px solid #1b2535',
+    borderRadius: 8,
+    padding: '10px 12px',
+    outline: 'none'
+  },
+  button: {
+    padding: '10px 16px',
+    borderRadius: 8,
+    border: '1px solid #1b2535',
+    background: '#1a7f64',
+    color: '#e8eef6',
+    fontWeight: 700,
+    cursor: 'pointer'
+  },
+  footerNote: { marginTop: 6, fontSize: 12, opacity: .6 }
+};
