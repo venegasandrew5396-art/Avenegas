@@ -1,4 +1,4 @@
-export const runtime = "edge";
+export const runtime = "node.js";
 import OpenAI from "openai";
 
 const client = new OpenAI({
