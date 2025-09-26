@@ -5,13 +5,11 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function POST(req) {
   try {
     const { prompt, size = "1024x1024" } = await req.json();
-
     const gen = await client.images.generate({
-      model: "gpt-image-1", // latest image model
+      model: "gpt-image-1",
       prompt,
-      size,                 // "512x512", "1024x1024", "2048x2048" (if enabled)
+      size,
     });
-
     const b64 = gen.data[0].b64_json;
     return Response.json({ ok: true, b64 });
   } catch (e) {
@@ -20,4 +18,9 @@ export async function POST(req) {
       headers: { "Content-Type": "application/json" },
     });
   }
+}
+
+// (optional quick sanity check in browser)
+export async function GET() {
+  return new Response("Use POST with { prompt }", { status: 405 });
 }
