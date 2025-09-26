@@ -82,7 +82,7 @@ export default function ChatPage() {
       setMessages((m) => [...m, { role: 'user', content: text }]);
 
       try {
-        const src = await generateImage(prompt, '1024x1024');
+        const src = await generateImage(prompt, '512x512');
         setMessages((m) => [...m, { role: 'assistant', image: src, alt: prompt }]);
       } catch (e) {
         setMessages((m) => [...m, { role: 'assistant', content: `Image error: ${e.message}` }]);
