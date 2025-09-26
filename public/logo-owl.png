@@ -1,1 +1,123 @@
+/* ===== Brand tokens ===== */
+:root{
+  --vx-bg:        #07140f;   /* site bg */
+  --vx-panel:     #0e1f17;   /* card bg */
+  --vx-elev:      #10241b;   /* messages bg */
+  --vx-input:     #143426;   /* input bg */
+  --vx-border:    #143426;   /* borders   */
+  --vx-text:      #ffffff;   /* main text */
+  --vx-subtext:   #b8d1c1;   /* assistant text */
+  --vx-gold:      #d4b866;   /* brand gold */
+  --vx-gold-2:    #b79b4f;   /* darker gold */
+  --vx-text-dark: #092015;   /* dark text on gold */
+}
 
+/* ===== Base ===== */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body.vx-body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: var(--vx-bg);
+  color: var(--vx-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Header ===== */
+.vx-header{
+  display:flex; align-items:center; gap:.6rem;
+  padding:14px 18px;
+  border-bottom:1px solid var(--vx-border);
+  background: linear-gradient(180deg, rgba(18,35,28,.6), rgba(14,31,23,.6));
+  position:sticky; top:0; z-index:20;
+  backdrop-filter: blur(6px);
+}
+.vx-logo{
+  width:28px; height:28px; border-radius:6px;
+  border:1px solid var(--vx-border);
+  box-shadow:0 1px 3px rgba(0,0,0,.35);
+}
+.vx-brand{
+  font-weight:800; letter-spacing:.3px; color:var(--vx-gold);
+}
+
+/* ===== Page shell ===== */
+.vx-shell{
+  min-height: calc(100dvh - 120px);
+  padding: 24px 16px;
+  display:flex; justify-content:center;
+}
+
+/* ===== Card ===== */
+.vx-card{
+  width:100%; max-width:760px;
+  background: var(--vx-panel);
+  border:1px solid var(--vx-border);
+  border-radius:14px;
+  padding:18px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+.vx-titlebar{
+  display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;
+}
+.vx-title{ font-size:28px; font-weight:800; margin:0 }
+.vx-note{ color:var(--vx-subtext); font-size:12px }
+
+/* ===== Messages ===== */
+.vx-messages{
+  height:55vh; overflow-y:auto;
+  padding:10px 8px;
+  background: var(--vx-elev);
+  border-radius:10px;
+  border:1px solid var(--vx-border);
+  margin-bottom:12px;
+}
+.vx-msg{ margin:10px 0; line-height:1.5; }
+.vx-msg strong{ opacity:.85; }
+.vx-user{ color: var(--vx-text); }
+.vx-assistant{ color: var(--vx-subtext); }
+.vx-img{
+  max-width:100%;
+  border-radius:10px;
+  border:1px solid var(--vx-border);
+  margin-top:6px;
+}
+
+/* ===== Composer ===== */
+.vx-composer{ display:flex; gap:10px; align-items:flex-end; }
+.vx-input{
+  flex:1;
+  resize:none;
+  background: var(--vx-input);
+  color: var(--vx-text);
+  border:1px solid #1f3d2d;
+  border-radius:10px;
+  padding:12px 14px;
+  outline:none;
+  font-size:15px; line-height:1.4;
+}
+.vx-btn{
+  padding:12px 18px;
+  border-radius:10px;
+  border:1px solid var(--vx-gold-2);
+  background: var(--vx-gold);
+  color: var(--vx-text-dark);
+  font-weight:800;
+  cursor:pointer;
+  transition: background .15s ease, transform .05s ease;
+}
+.vx-btn:active{ transform: translateY(1px); }
+
+/* ===== Footer ===== */
+.vx-footer{
+  border-top:1px solid var(--vx-border);
+  color:var(--vx-subtext);
+  padding:14px 18px; text-align:center;
+}
+
+/* ===== Welcome bubble with owl ===== */
+.vx-welcome{
+  display:flex; align-items:center; gap:8px;
+}
+.vx-welcome img{ width:22px; height:22px; }
