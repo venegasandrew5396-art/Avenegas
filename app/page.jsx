@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const MODEL_NAME = 'gpt-5';
 
-// ---------- API helpers ----------
+// --- API helpers ---
 async function sendChat(messages) {
   const res = await fetch('/api/chat', {
     method: 'POST',
@@ -12,7 +12,7 @@ async function sendChat(messages) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
-  return data.message;
+  return data.message; // { role, content }
 }
 
 async function generateImage(prompt, size = '1024x1024') {
@@ -24,119 +24,11 @@ async function generateImage(prompt, size = '1024x1024') {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
   const b64 = data.b64;
-  if (!b64) throw new Error('No image data returned');
   const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   return URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
 }
 
-// ---------- Helpers: simplify & SVG fallback ----------
-function simplifyPrompt(p) {
-  if (!p) return '';
-  let s = p.split(/[.!?]/)[0];
-  if (s.length < 40) s = p;
-  s = s.replace(/,\s*(ultra|hyper|octane|8k|unreal|cinematic|photoreal|ray\s*tracing|hdr)\b.*$/i, '');
-  if (s.length > 220) s = s.slice(0, 220);
-  return s.trim();
-}
-
-// very fast local SVG fallback for simple requests
-function svgFallbackURL(prompt) {
-  if (!prompt) return null;
-  const p = prompt.toLowerCase();
-
-  // color helpers
-  const hexFromWord = (w) => {
-    const map = {
-      red:'#ff0000', blue:'#0057ff', green:'#00b050', yellow:'#ffd400', orange:'#ff7a00',
-      purple:'#7a3cff', pink:'#ff4fa3', black:'#000000', white:'#ffffff', gray:'#888888',
-      gold:'#d4b866', teal:'#1f7d5e', navy:'#0f172a', maroon:'#7a0026'
-    };
-    return map[w] || null;
-  };
-  const colorWord = (p.match(/\b(red|blue|green|yellow|orange|purple|pink|black|white|gray|gold|teal|navy|maroon)\b/) || [])[0] || 'red';
-  const color = hexFromWord(colorWord) || '#ff0000';
-
-  // square
-  if (/\bsquare\b/.test(p)) {
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024'><rect width='100%' height='100%' fill='${color}'/></svg>`;
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  }
-
-  // circle
-  if (/\bcircle\b/.test(p)) {
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024'><circle cx='512' cy='512' r='480' fill='${color}'/></svg>`;
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  }
-
-  // rectangle (landscape)
-  if (/\brectangle\b/.test(p)) {
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1536' height='1024'><rect width='100%' height='100%' fill='${color}'/></svg>`;
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  }
-
-  // gradient
-  if (/\bgradient\b/.test(p)) {
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024'>
-      <defs>
-        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-          <stop offset='0%' stop-color='${color}'/>
-          <stop offset='100%' stop-color='#07140f'/>
-        </linearGradient>
-      </defs>
-      <rect width='100%' height='100%' fill='url(#g)'/>
-    </svg>`;
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  }
-
-  // placeholder text: “placeholder hello world”
-  const ph = p.match(/\bplaceholder\s+(.+)/);
-  if (ph) {
-    const text = (ph[1] || 'Placeholder').slice(0, 28);
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024'>
-      <rect width='100%' height='100%' fill='#10241b'/>
-      <text x='50%' y='50%' fill='${color}' font-size='72' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='middle'>${text}</text>
-    </svg>`;
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  }
-
-  return null; // not a simple shape
-}
-
-async function generateImageWithRetry(prompt) {
-  // 1) normal attempt: 1024x1024
-  try {
-    return await generateImage(prompt, '1024x1024');
-  } catch (e1) {
-    const msg1 = String(e1?.message || '').toLowerCase();
-    const timeout1 = msg1.includes('504') || msg1.includes('timed out');
-    if (!timeout1) throw e1;
-
-    // 2) retry simplified + auto
-    const simpler = simplifyPrompt(prompt);
-    if (simpler) {
-      try {
-        return await generateImage(simpler, 'auto');
-      } catch (e2) {
-        const msg2 = String(e2?.message || '').toLowerCase();
-        const timeout2 = msg2.includes('504') || msg2.includes('timed out');
-
-        // 3) as a last resort: instant SVG fallback for simple shapes
-        const svgUrl = svgFallbackURL(prompt);
-        if (svgUrl && timeout2) {
-          return svgUrl; // data: URL works directly in <img src=...>
-        }
-        throw e2;
-      }
-    } else {
-      // no simplification possible; try SVG fallback
-      const svgUrl = svgFallbackURL(prompt);
-      if (svgUrl) return svgUrl;
-      throw e1;
-    }
-  }
-}
-
-// ---------- Main UI ----------
+// --- Main UI ---
 export default function Page() {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Welcome to VenegasAI — to start, just type a message below.' }
@@ -152,10 +44,10 @@ export default function Page() {
   async function handleSend() {
     const text = input.trim();
     if (!text || loading) return;
-
     setInput('');
     setLoading(true);
 
+    // commands: /img …, /image …, create image …
     const IMG_RE = /^(?:\/(?:img|image)|create(?:\s+an)?\s+image(?:\s+of)?)\s+/i;
 
     if (IMG_RE.test(text)) {
@@ -167,15 +59,10 @@ export default function Page() {
       }
       setMessages(m => [...m, { role: 'user', content: text }]);
       try {
-        const src = await generateImageWithRetry(prompt);
+        const src = await generateImage(prompt, '1024x1024'); // same as your working base
         setMessages(m => [...m, { role: 'assistant', image: src, alt: prompt }]);
       } catch (e) {
-        setMessages(m => [
-          ...m,
-          { role: 'assistant',
-            content: `Image error: ${e.message}. Tip: shorten details or try “create image … in simple flat style”.`
-          }
-        ]);
+        setMessages(m => [...m, { role: 'assistant', content: `Image error: ${e.message}` }]);
       } finally {
         setLoading(false);
       }
@@ -265,7 +152,7 @@ export default function Page() {
   );
 }
 
-// ---------- Styles ----------
+// --- Styles ---
 const styles = {
   page: {
     minHeight: '100vh',
