@@ -12,3 +12,9 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+export const metadata = {
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png', // optional if you add this file
+  },
+};
