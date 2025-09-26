@@ -4,38 +4,27 @@ import "./globals.css";
 export const metadata = {
   title: "VenegasAI",
   description: "Fast, simple AI chat.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        {/* Standard favicons */}
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="32x32"
-          href="/favicon-32x32.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="16x16"
-          href="/favicon-16x16.png"
-        />
+      <body>
+        <header className="vx-header">
+          <img src="/logo-owl.png" alt="VenegasAI" className="vx-logo" />
+          <span className="vx-brand">VenegasAI</span>
+        </header>
 
-        {/* Apple touch icon */}
-        <link
-          rel="apple-touch-icon"
-          sizes="180x180"
-          href="/apple-touch-icon.png"
-        />
+        <main className="vx-shell">{children}</main>
 
-        {/* Optional: manifest for PWA support */}
-        <link rel="manifest" href="/site.webmanifest" />
-      </head>
-      <body>{children}</body>
+        <footer className="vx-footer">
+          <span>© {new Date().getFullYear()} VenegasAI</span>
+        </footer>
+      </body>
     </html>
   );
 }
